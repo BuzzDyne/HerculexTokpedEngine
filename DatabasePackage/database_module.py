@@ -25,6 +25,20 @@ class DbModule:
         )
 
         self.cursor = self.mydb.cursor()
+    #region Logging
+    def LogActivity(self, activityType, desc):
+        sql = """
+            INSERT INTO GlobalLogging_TH (
+                ApplicationName, 
+                ActivityDate,
+                ActivityType,
+                Description
+            ) VALUES ('TokpedEngine', %s, %s, %s)"""
+        
+        val = (time.strftime('%Y-%m-%d %H:%M:%S'), activityType, desc)
+
+        self.cursor.execute(sql, val)
+        self.mydb.commit()
 
     def LogStartJob(self):
         sql = """
@@ -67,24 +81,25 @@ class DbModule:
 
         self.cursor.execute(sql, val)
         self.mydb.commit()
+    #endregion
 
     def insertOrder(self, data:Order):
         sql = """
             INSERT INTO TPOrder_TM (
                 order_id, buyer_id, invoice_ref_num, order_status,
                 ts_created, ts_acc_by, ts_ship_by,
-                insert_ts, last_updated_ts
+                insert_ts
             ) VALUES (
                 %s, %s, %s, %s,
                 FROM_UNIXTIME(%s),FROM_UNIXTIME(%s),FROM_UNIXTIME(%s),
-                %s, %s
+                %s
             )
         """
         
         param = (
             data.order_id, data.buyer_id, data.invoice_ref_num, data.order_status,
             data.ts_created, data.ts_acc_by, data.ts_ship_by,
-            time.strftime('%Y-%m-%d %H:%M:%S'), time.strftime('%Y-%m-%d %H:%M:%S')
+            time.strftime('%Y-%m-%d %H:%M:%S')
         )
 
         self.cursor.execute(sql, param)
@@ -103,7 +118,7 @@ class DbModule:
         self.mydb.commit()
 
     def getAllOrderID(self) -> Tuple[str]:
-        """Returns tuples of OrderIDs already in DB"""
+        """Returns list of OrderIDs already in DB"""
         sql = """
             SELECT DISTINCT order_id 
             FROM TPOrder_TM
@@ -112,16 +127,18 @@ class DbModule:
         self.cursor.execute(sql)
         res = self.cursor.fetchall()
 
-        tuplesOfOrderIDs = ()
+        listOfOrderIDs = []
 
         for x in res:
-            tuplesOfOrderIDs += x
+            listOfOrderIDs.append(x[0])
 
-        return tuplesOfOrderIDs
+        return listOfOrderIDs
 
     def getProcessSyncDate(self, platform_name:str) -> Dict:
         sql = """
-            SELECT initial_sync_ts, last_synced
+            SELECT 
+                UNIX_TIMESTAMP(initial_sync_ts), 
+                UNIX_TIMESTAMP(last_synced)
             FROM HCXProcessSyncStatus_TM
             WHERE platform_name = %s
             LIMIT 1

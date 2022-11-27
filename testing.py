@@ -22,19 +22,21 @@
 from app import App
 
 a = App()
-# a._testBlindPushOrderToDB()
+a._testBlindPushOrderToDB()
 # a._testCheckMaxQuery(59)
 
 # l = []
 
-# for x in range(1334,2000):
+# for x in range(1):
 #     count = a._testCheckMaxQuery(x)
 #     l.append(count)
 #     print(f'{x} = {count}')
 
 # print(f'Max Count = {max(l)}')
 
-x = a.db.getProcessSyncDate("TOKOPEDIA")
+# x = a.db.getProcessSyncDate("TOKOPEDIA")
 #####################################
+
+# x = a.db.getAllOrderID()
 
 print()
