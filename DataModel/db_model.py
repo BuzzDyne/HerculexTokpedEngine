@@ -28,14 +28,17 @@ def createOrder(input) -> Order:
 
     listOfDetails = createListOfOrderItem(input)
 
+    acc_by  = input['shipment_fulfillment']['accept_deadline']
+    done_by = input['shipment_fulfillment']['confirm_shipping_deadline']
+
     obj = Order(
         input['order_id'],
         input['buyer']['id'],
         input['invoice_ref_num'],
         input['order_status'],
         input['create_time'],
-        convertISO8601toUnix(input['shipment_fulfillment']['accept_deadline']),
-        convertISO8601toUnix(input['shipment_fulfillment']['confirm_shipping_deadline']),
+        convertISO8601toUnix(acc_by)  if acc_by  != '' else None,
+        convertISO8601toUnix(done_by) if done_by != '' else None,
         listOfDetails
     )
 

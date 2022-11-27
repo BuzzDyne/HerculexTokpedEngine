@@ -29,7 +29,7 @@ class TokpedModule:
 
         return response.json()['access_token']
 
-    def _testFnGetOrders(self, from_date = None, to_date = None):
+    def getOrderBetweenTS(self, from_date = None, to_date = None):
         from_date   = from_date if from_date is not None    else '1669202785'
         to_date     = to_date   if to_date  is not None     else '1669312785'
 
@@ -44,10 +44,15 @@ class TokpedModule:
             }
             
             response = requests.get(
-                f'https://fs.tokopedia.net/v2/order/list?fs_id={self.fsID}&from_date={from_date}&to_date={to_date}&page=1&per_page=20&shop_id={self.shopID}',
+                f'https://fs.tokopedia.net/v2/order/list?fs_id={self.fsID}&from_date={from_date}&to_date={to_date}&page=1&per_page=100&shop_id={self.shopID}',
                 headers = header
             ) 
         except requests.RequestException as e:
             raise SystemExit(e)
+
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise SystemExit(f"Error: {str(e)}")
 
         return response.json()['data']

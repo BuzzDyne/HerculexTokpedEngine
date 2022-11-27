@@ -1,5 +1,7 @@
 import time
 import mysql.connector
+from typing import Tuple, Dict
+
 from _cred import Credentials
 from DataModel.db_model import Order, OrderItem
 
@@ -45,7 +47,7 @@ class DbModule:
                 ActivityDate,
                 ActivityType,
                 Description
-            ) VALUES ('TokpedEngine', %s, 'Interval Data Collection', 'JOB END')"""
+            ) VALUES ('TokpedEngine', FROM_UNIXTIME(%s), 'Interval Data Collection', 'JOB END')"""
         
         val = (time.strftime('%Y-%m-%d %H:%M:%S'))
 
@@ -99,3 +101,38 @@ class DbModule:
 
         self.cursor.execute(sql, param)
         self.mydb.commit()
+
+    def getAllOrderID(self) -> Tuple[str]:
+        """Returns tuples of OrderIDs already in DB"""
+        sql = """
+            SELECT DISTINCT order_id 
+            FROM TPOrder_TM
+        """
+
+        self.cursor.execute(sql)
+        res = self.cursor.fetchall()
+
+        tuplesOfOrderIDs = ()
+
+        for x in res:
+            tuplesOfOrderIDs += x
+
+        return tuplesOfOrderIDs
+
+    def getProcessSyncDate(self, platform_name:str) -> Dict:
+        sql = """
+            SELECT initial_sync_ts, last_synced
+            FROM HCXProcessSyncStatus_TM
+            WHERE platform_name = %s
+            LIMIT 1
+        """
+
+        val = (platform_name,)
+
+        self.cursor.execute(sql, val)
+        res = self.cursor.fetchall()[0]
+
+        return {
+            "initial_sync_ts"   : res[0],
+            "last_synced"       : res[1]
+        }
