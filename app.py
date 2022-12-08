@@ -1,5 +1,5 @@
 import time
-from typing import List
+from typing import List, Tuple
 
 from datetime import datetime as dt
 from datetime import timezone as tz
@@ -13,50 +13,24 @@ class App:
         self.db = DbModule()
         self.tp = TokpedModule()
 
-    def syncTokpedNewOrderData(self):
-        # Logging
-        self.db.LogActivity("Sync Orders", "Process BEGIN")
+    def _cleanListOfOrder(self, listOfOrders: List[Order]) -> Tuple[List[Order]]:
+        # Remove Duplicate OrderID
+        uniqueList = {o.order_id: o for o in listOfOrders}.values()
 
-        # Get start sync date
-        sync_info = self.db.getProcessSyncDate("TOKOPEDIA")
-        start_period    = sync_info["initial_sync_ts"] if sync_info["last_synced"] is None else sync_info["last_synced"]
-        end_period      = int(dt.now(tz.utc).timestamp())
+        # Get existing OrderID
+        listOfExistingIDs = self.db.getAllOrderID()
 
-        if start_period > end_period:
-            self.db.LogActivity("Sync Orders", "initial/last sync time is bigger than current time")
-        else:
-            # Get existing OrderID
-            listOfIDs = self.db.getAllOrderID()
-            THREE_DAYS_IN_SEC = (60 * 60 * 24 * 3)
-
-            # Iterate API to get OrderIDs based on period
-            resultList = []
-
-            start_query = start_period
-            end_query   = end_period
-
-            while start_query <= end_period:
-                if end_query - start_query > THREE_DAYS_IN_SEC:
-                    end_query = start_query + THREE_DAYS_IN_SEC
-
-                res = self._getOrderObjectBetweenTS(start_query, end_query)
-                resultList.append(res)
-
-                start_query = None
-                #TODO
-
-
-
-            # Insert New Orders to DB
-
-        # Logging
-        self.db.LogActivity("Sync Orders", "Process END")
-
-        return
+        # Remove Existing OrderID
+        cleanList   = [x for x in uniqueList if x.order_id not in listOfExistingIDs]
+        dupeList    = [x for x in uniqueList if x.order_id in listOfExistingIDs]
+        return (cleanList, dupeList)
 
     def _getOrderObjectBetweenTS(self, from_date, to_date) -> List[Order]:
         jsonOfOrders = self.tp.getOrderBetweenTS(from_date, to_date)
         
+        if jsonOfOrders is None:
+            return None
+
         listOfOrders: List[Order] = []
 
         for o in jsonOfOrders:
@@ -96,3 +70,62 @@ class App:
             listOfOrders.append(createOrder(o))
         
         return len(listOfOrders)
+    
+    def syncTokpedNewOrderData(self):
+        currTime = dt.now(tz.utc)
+
+        # Logging
+        self.db.TokpedLogActivity("Sync Orders", "Process BEGIN")
+
+        # Get start sync date
+        sync_info = self.db.getTokpedProcessSyncDate()
+        start_period    = sync_info["initial_sync"] if sync_info["last_synced"] is None else sync_info["last_synced"]
+        end_period      = int(currTime.timestamp())
+        self.db.TokpedLogActivity("Sync Orders", f"StartPeriod : {start_period} | EndPeriod : {end_period}")
+
+
+        if start_period > end_period:
+            self.db.TokpedLogActivity("Sync Orders", "initial/last sync time is bigger than current time")
+            self.db.TokpedLogActivity("Sync Orders", "Process END")
+            return
+
+        # Iterate API to get OrderIDs based on period
+        resultList = []
+        THREE_DAYS_IN_SEC = (60 * 60 * 24 * 3)
+
+        start_time  = start_period
+        end_time    = 0
+
+        while end_time < end_period:
+            temp = start_time + THREE_DAYS_IN_SEC
+            end_time = temp if temp < end_period else end_period
+            
+            res = self._getOrderObjectBetweenTS(start_time, end_time)
+            if res:
+                resultList += res
+
+            start_time += THREE_DAYS_IN_SEC
+
+        countData = len(resultList) if resultList else 0
+        self.db.TokpedLogActivity("Sync Orders", f"Got {countData} Orders from TokpedAPI")
+
+        if(resultList):
+            # Clean ListOfOrder (Remove Duplicate and Separate Existing IDs)
+            cleanList, dupeList = self._cleanListOfOrder(resultList)
+            self.db.TokpedLogActivity("Sync Orders", f"Pushing {len(cleanList)} Orders to DB (Cleaning Process Done)")
+
+            # Insert ListOfOrder to DB
+            for o in cleanList:
+                for item in o.list_of_items:
+                    self.db.insertOrderItem(item)
+                self.db.insertOrder(o)
+            
+            
+
+        # Update LastSynced
+        self.db.setTokpedLastSynced(currTime)
+
+        # Logging
+        self.db.TokpedLogActivity("Sync Orders", "Process END")
+
+        return

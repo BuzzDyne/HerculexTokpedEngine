@@ -13,6 +13,9 @@ class Order():
         self.ts_ship_by         = ts_ship_by
         self.list_of_items    = list_of_items
 
+    def __str__(self) -> str:
+        return f"OrderID: {self.order_id}"
+
 
 class OrderItem():
     def __init__(self, order_id, product_id, product_name, quantity, product_price, order_detail_id=None):

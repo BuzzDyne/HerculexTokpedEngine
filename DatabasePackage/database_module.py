@@ -1,32 +1,22 @@
 import time
 import mysql.connector
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 
 from _cred import Credentials
 from DataModel.db_model import Order, OrderItem
 
-mydb = mysql.connector.connect(
-  host      = Credentials["host"],
-  user      = Credentials["user"],
-  password  = Credentials["password"],
-  database  = Credentials["database"]
-)
-
-myCursor = mydb.cursor()
-
-
 class DbModule:
     def __init__(self):
-        self.mydb = mysql.connector.connect(
+        self.cnx = mysql.connector.connect(
             host      = Credentials["host"],
             user      = Credentials["user"],
             password  = Credentials["password"],
             database  = Credentials["database"]
         )
 
-        self.cursor = self.mydb.cursor()
+        self.cursor = self.cnx.cursor()
     #region Logging
-    def LogActivity(self, activityType, desc):
+    def TokpedLogActivity(self, activityType, desc):
         sql = """
             INSERT INTO GlobalLogging_TH (
                 ApplicationName, 
@@ -38,7 +28,7 @@ class DbModule:
         val = (time.strftime('%Y-%m-%d %H:%M:%S'), activityType, desc)
 
         self.cursor.execute(sql, val)
-        self.mydb.commit()
+        self.cnx.commit()
 
     def LogStartJob(self):
         sql = """
@@ -52,7 +42,7 @@ class DbModule:
         val = (time.strftime('%Y-%m-%d %H:%M:%S'))
 
         self.cursor.execute(sql, val)
-        self.mydb.commit()
+        self.cnx.commit()
 
     def LogEndJob(self):
         sql = """
@@ -66,7 +56,7 @@ class DbModule:
         val = (time.strftime('%Y-%m-%d %H:%M:%S'))
 
         self.cursor.execute(sql, val)
-        self.mydb.commit()
+        self.cnx.commit()
 
     def Logging(self, msg:str):
         sql = """
@@ -80,7 +70,7 @@ class DbModule:
         val = (time.strftime('%Y-%m-%d %H:%M:%S'), msg)
 
         self.cursor.execute(sql, val)
-        self.mydb.commit()
+        self.cnx.commit()
     #endregion
 
     def insertOrder(self, data:Order):
@@ -103,7 +93,7 @@ class DbModule:
         )
 
         self.cursor.execute(sql, param)
-        self.mydb.commit()
+        self.cnx.commit()
 
     def insertOrderItem(self, data:OrderItem):
         sql = """
@@ -115,9 +105,9 @@ class DbModule:
         param = (data.order_id, data.product_id, data.product_name, data.quantity, data.product_price)
 
         self.cursor.execute(sql, param)
-        self.mydb.commit()
+        self.cnx.commit()
 
-    def getAllOrderID(self) -> Tuple[str]:
+    def getAllOrderID(self) -> List[str]:
         """Returns list of OrderIDs already in DB"""
         sql = """
             SELECT DISTINCT order_id 
@@ -134,22 +124,33 @@ class DbModule:
 
         return listOfOrderIDs
 
-    def getProcessSyncDate(self, platform_name:str) -> Dict:
+    def getTokpedProcessSyncDate(self) -> Dict:
         sql = """
             SELECT 
-                UNIX_TIMESTAMP(initial_sync_ts), 
+                UNIX_TIMESTAMP(initial_sync), 
                 UNIX_TIMESTAMP(last_synced)
             FROM HCXProcessSyncStatus_TM
-            WHERE platform_name = %s
+            WHERE platform_name = "TOKOPEDIA"
             LIMIT 1
         """
 
-        val = (platform_name,)
-
-        self.cursor.execute(sql, val)
+        self.cursor.execute(sql)
         res = self.cursor.fetchall()[0]
 
         return {
-            "initial_sync_ts"   : res[0],
+            "initial_sync"      : res[0],
             "last_synced"       : res[1]
         }
+    
+    def setTokpedLastSynced(self, dt):
+        sql = """
+            UPDATE HCXProcessSyncStatus_TM
+            SET
+                last_synced = %s
+            WHERE platform_name = "TOKOPEDIA"
+        """
+
+        val = (dt.strftime('%Y-%m-%d %H:%M:%S'),) if dt is not None else (dt,)
+
+        self.cursor.execute(sql, val)
+        self.cnx.commit()
