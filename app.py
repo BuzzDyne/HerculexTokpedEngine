@@ -12,18 +12,37 @@ class App:
     def __init__(self):
         self.db = DbModule()
         self.tp = TokpedModule()
+    
+    #region Private Functions
+    def _findOrderStatusFromListByID(self, list_of_orders, order_id):
+        for x in list_of_orders:
+            if x.order_id == order_id:
+                return x.order_status
 
-    def _cleanListOfOrder(self, listOfOrders: List[Order]) -> Tuple[List[Order]]:
+    def _cleanListOfOrder(self, list_of_new_orders: List[Order]) -> Tuple[List[Order]]:
         # Remove Duplicate OrderID
-        uniqueList = {o.order_id: o for o in listOfOrders}.values()
+        unique_list_of_new_orders     = {o.order_id: o for o in list_of_new_orders}.values()
+        listOfOrderIDs  = [o.order_id for o in unique_list_of_new_orders]
 
-        # Get existing OrderID
-        listOfExistingIDs = self.db.getAllOrderID()
+        # Get existing OrderDetail
+        list_of_existing_order_detail   = self.db.getOrderDetailsByIDs(listOfOrderIDs)
+        list_of_existing_order_id       = [o[0] for o in list_of_existing_order_detail]
+        dict_of_order_existing          = dict(list_of_existing_order_detail)
+
 
         # Remove Existing OrderID
-        cleanList   = [x for x in uniqueList if x.order_id not in listOfExistingIDs]
-        dupeList    = [x for x in uniqueList if x.order_id in listOfExistingIDs]
-        return (cleanList, dupeList)
+        new_list    = [x for x in unique_list_of_new_orders if x.order_id not in list_of_existing_order_id]
+        dupe_list   = [x for x in unique_list_of_new_orders if x.order_id in list_of_existing_order_id]
+
+        # Find Order with Updated Status from Existing Orders
+        update_list = {}
+        for id, status in dict_of_order_existing.items():
+            newStatus = self._findOrderStatusFromListByID(dupe_list, id)
+
+            if status != newStatus:
+                update_list[id] = newStatus
+
+        return (new_list, update_list)
 
     def _getOrderObjectBetweenTS(self, from_date, to_date) -> List[Order]:
         jsonOfOrders = self.tp.getOrderBetweenTS(from_date, to_date)
@@ -70,6 +89,7 @@ class App:
             listOfOrders.append(createOrder(o))
         
         return len(listOfOrders)
+    #endregion
     
     def syncTokpedNewOrderData(self):
         currTime = dt.now(tz.utc)
@@ -111,7 +131,7 @@ class App:
 
         if(resultList):
             # Clean ListOfOrder (Remove Duplicate and Separate Existing IDs)
-            cleanList, dupeList = self._cleanListOfOrder(resultList)
+            cleanList, update_list = self._cleanListOfOrder(resultList)
             self.db.TokpedLogActivity("Sync Orders", f"Pushing {len(cleanList)} Orders to DB (Cleaning Process Done)")
 
             # Insert ListOfOrder to DB
@@ -120,6 +140,9 @@ class App:
                     self.db.insertOrderItem(item)
                 self.db.insertOrder(o)
             
+            # Update status
+            self.db.TokpedLogActivity("Sync Orders", f"Updating statuses of {len(update_list)} Orders to DB")
+            self.db.setBatchUpdateOrdersStatus(update_list)
             
 
         # Update LastSynced

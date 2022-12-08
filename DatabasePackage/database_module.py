@@ -5,6 +5,9 @@ from typing import Tuple, Dict, List
 from _cred import Credentials
 from DataModel.db_model import Order, OrderItem
 
+from datetime import datetime as dt
+from datetime import timezone as tz
+
 class DbModule:
     def __init__(self):
         self.cnx = mysql.connector.connect(
@@ -124,6 +127,21 @@ class DbModule:
 
         return listOfOrderIDs
 
+    def getOrderDetailsByIDs(self, listOfIDs) -> List[Tuple[str]]:
+        """Returns list of Tuples(OrderID, Status) already in DB"""
+        format_string = ','.join(['%s'] * len(listOfIDs))
+
+        sql = """
+            SELECT order_id, order_status
+            FROM TPOrder_TM
+            WHERE order_id IN (%s)
+        """ % format_string
+
+        self.cursor.execute(sql, tuple(listOfIDs))
+        res = self.cursor.fetchall()
+
+        return res
+
     def getTokpedProcessSyncDate(self) -> Dict:
         sql = """
             SELECT 
@@ -142,7 +160,7 @@ class DbModule:
             "last_synced"       : res[1]
         }
     
-    def setTokpedLastSynced(self, dt):
+    def setTokpedLastSynced(self, dt_input):
         sql = """
             UPDATE HCXProcessSyncStatus_TM
             SET
@@ -150,7 +168,26 @@ class DbModule:
             WHERE platform_name = "TOKOPEDIA"
         """
 
-        val = (dt.strftime('%Y-%m-%d %H:%M:%S'),) if dt is not None else (dt,)
+        val = (dt_input.strftime('%Y-%m-%d %H:%M:%S'),) if dt_input is not None else (dt_input,)
 
         self.cursor.execute(sql, val)
+        self.cnx.commit()
+
+    def setBatchUpdateOrdersStatus(self, dictOfIDsAndStatuses):
+        ts = dt.now(tz.utc)
+
+        for order_id, order_status in dictOfIDsAndStatuses.items():
+
+            sql = """
+                UPDATE TPOrder_TM
+                SET
+                    order_status = %s,
+                    last_updated_ts = %s
+                WHERE order_id = %s
+            """
+
+            val = (order_status, ts.strftime('%Y-%m-%d %H:%M:%S'), order_id)
+
+            self.cursor.execute(sql, val)
+
         self.cnx.commit()

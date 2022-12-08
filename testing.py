@@ -1,8 +1,14 @@
-from DatabasePackage.database_module import DbModule
+# from DatabasePackage.database_module import DbModule
 
 # myDB = DbModule()
 
-# myDB.setTokpedLastSynced(None)
+# listOfIDs = ['1402294529', '700']
+
+# dictOfO = {
+#     '1402294529': '700'
+# }
+
+# myDB.setBatchUpdateOrdersStatus(dictOfO)
 
 #################################################################################
 
@@ -24,3 +30,5 @@ a = App()
 a.syncTokpedNewOrderData()
 
 print("Finsihed")
+
+
