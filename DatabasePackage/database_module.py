@@ -206,3 +206,22 @@ class DbModule:
             self.cursor.execute(sql, val)
 
         self.cnx.commit()
+
+    def setBatchUpdateOrdersStatusTuple(self, tupleOfIDsAndStatuses):
+        ts = dt.now(tz.utc)
+
+        for order_id, order_status in tupleOfIDsAndStatuses:
+
+            sql = """
+                UPDATE TPOrder_TM
+                SET
+                    order_status = %s,
+                    last_updated_ts = %s
+                WHERE order_id = %s
+            """
+
+            val = (order_status, ts.strftime('%Y-%m-%d %H:%M:%S'), order_id)
+
+            self.cursor.execute(sql, val)
+
+        self.cnx.commit()

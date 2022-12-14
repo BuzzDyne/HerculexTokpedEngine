@@ -101,9 +101,13 @@ class App:
         listOldOrderDetails = self.db.getOrderDetailsByNeedToUpdated(listStatusNotNeedToUpdate)
 
         # Hit API Tokped
-        listNewOrderDetails = self.tp
+        listNewOrderDetails = self.tp.getBatchOrderDetailByIDs([x[0] for x in listOldOrderDetails])
+
+        # Clean listNewOrderDetails TODO
 
         # Push updates
+        self.db.setBatchUpdateOrdersStatusTuple()
+        
         
         return
 
