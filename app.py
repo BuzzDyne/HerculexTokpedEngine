@@ -91,6 +91,22 @@ class App:
         return len(listOfOrders)
     #endregion
     
+    def syncTokpedExsOrderDate(self):
+        listStatusNotNeedToUpdate = ['0','3','5','6','10','15','520','550','700']
+
+        # Logging
+        self.db.TokpedLogActivity("Sync Existing Orders", "Process BEGIN")
+
+        # Ambil list order_id yang harus diupdate
+        listOldOrderDetails = self.db.getOrderDetailsByNeedToUpdated(listStatusNotNeedToUpdate)
+
+        # Hit API Tokped
+        listNewOrderDetails = self.tp
+
+        # Push updates
+        
+        return
+
     def syncTokpedNewOrderData(self):
         currTime = dt.now(tz.utc)
 

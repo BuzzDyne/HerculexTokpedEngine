@@ -56,3 +56,37 @@ class TokpedModule:
             raise SystemExit(f"Error: {str(e)}")
 
         return response.json()['data']
+
+
+    def _getOrderDetailByID(self, order_id):
+        try:
+            header = {
+                'Authorization'   : 'Bearer ' + self.accessToken,
+                'Content-Length'  : '0',
+                'User-Agent'      : 'PostmanRuntime/7.28.4',
+                'Accept'          : '*/*',
+                'Accept-Encoding' : 'gzip, deflate, br',
+                'Connection'      : 'keep-alive'
+            }
+
+            response = requests.get(
+                f'https://fs.tokopedia.net/v2/fs/{self.fsID}/order?order_id={order_id}',
+                headers = header
+            ) 
+        except requests.RequestException as e:
+            raise SystemExit(e)
+
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise SystemExit(f"Error: {str(e)}")
+
+        return (response.json()['data']['order_id'], response.json()['data']['order_status'])
+
+    def getBatchOrderDetailByIDs(self, list_order_ids):
+        list_of_tuples_order_detail = []
+
+        for id in list_order_ids:
+            list_of_tuples_order_detail.append(self._getOrderDetailByID(id))
+
+        return list_of_tuples_order_detail

@@ -142,6 +142,21 @@ class DbModule:
 
         return res
 
+    def getOrderDetailsByNeedToUpdated(self, listOfStatuses) -> List[Tuple[str]]:
+        """Returns list of Tuples(OrderID, Status) that needs to be updated in DB"""
+        format_string = ','.join(['%s'] * len(listOfStatuses))
+
+        sql = """
+            SELECT order_id, order_status
+            FROM TPOrder_TM
+            WHERE order_status NOT IN (%s)
+        """ % format_string
+
+        self.cursor.execute(sql, tuple(listOfStatuses))
+        res = self.cursor.fetchall()
+
+        return res
+
     def getTokpedProcessSyncDate(self) -> Dict:
         sql = """
             SELECT 
