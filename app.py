@@ -20,6 +20,7 @@ class App:
                 return x.order_status
 
     def _cleanListOfOrder(self, list_of_new_orders: List[Order]) -> Tuple[List[Order]]:
+        '''returns tuple of two elements, new_list (list) and update_list (dictionary)'''
         # Remove Duplicate OrderID
         unique_list_of_new_orders     = {o.order_id: o for o in list_of_new_orders}.values()
         listOfOrderIDs  = [o.order_id for o in unique_list_of_new_orders]
@@ -91,7 +92,7 @@ class App:
         return len(listOfOrders)
     #endregion
     
-    def syncTokpedExsOrderDate(self):
+    def syncTokpedExsOrderData(self):
         listStatusNotNeedToUpdate = ['0','3','5','6','10','15','520','550','700']
 
         # Logging
@@ -99,17 +100,29 @@ class App:
 
         # Ambil list order_id yang harus diupdate
         listOldOrderDetails = self.db.getOrderDetailsByNeedToUpdated(listStatusNotNeedToUpdate)
+        self.db.TokpedLogActivity("Sync Existing Orders", f"Found {len(listOldOrderDetails)} Orders from DB to be updated.")
 
         # Hit API Tokped
         listNewOrderDetails = self.tp.getBatchOrderDetailByIDs([x[0] for x in listOldOrderDetails])
+        self.db.TokpedLogActivity("Sync Existing Orders", f"Got {len(listNewOrderDetails)} Orders from Tokped.")
 
         # Clean listNewOrderDetails TODO
+        dictOldOrderDetails = {}
+
+        for x in listOldOrderDetails:
+            dictOldOrderDetails[x[0]] = x[1]
+
+        dictNewOrderDetails = {}
+
+        for x in listNewOrderDetails:
+            if dictOldOrderDetails[str(x[0])] != str(x[1]):
+                dictNewOrderDetails[str(x[0])] = str(x[1])
 
         # Push updates
-        self.db.setBatchUpdateOrdersStatusTuple()
-        
-        
-        return
+        self.db.setBatchUpdateOrdersStatus(dictNewOrderDetails)
+        self.db.TokpedLogActivity("Sync Existing Orders", f"Updated {len(dictNewOrderDetails)} Orders.")
+
+        self.db.TokpedLogActivity("Sync Existing Orders", "Process END")
 
     def syncTokpedNewOrderData(self):
         currTime = dt.now(tz.utc)
@@ -151,7 +164,7 @@ class App:
 
         if(resultList):
             # Clean ListOfOrder (Remove Duplicate and Separate Existing IDs)
-            cleanList, update_list = self._cleanListOfOrder(resultList)
+            cleanList, update_dict = self._cleanListOfOrder(resultList)
             self.db.TokpedLogActivity("Sync Orders", f"Pushing {len(cleanList)} Orders to DB (Cleaning Process Done)")
 
             # Insert ListOfOrder to DB
@@ -161,8 +174,8 @@ class App:
                 self.db.insertOrder(o)
             
             # Update status
-            self.db.TokpedLogActivity("Sync Orders", f"Updating statuses of {len(update_list)} Orders to DB")
-            self.db.setBatchUpdateOrdersStatus(update_list)
+            self.db.TokpedLogActivity("Sync Orders", f"Updating statuses of {len(update_dict)} Orders to DB")
+            self.db.setBatchUpdateOrdersStatus(update_dict)
             
 
         # Update LastSynced

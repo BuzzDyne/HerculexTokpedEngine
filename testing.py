@@ -13,11 +13,11 @@
 #################################################################################
 
 # import time
-from TokpedPackage.tokped_module import TokpedModule
+# from TokpedPackage.tokped_module import TokpedModule
 
-myTokped = TokpedModule()
+# myTokped = TokpedModule()
 
-myTokped._getOrderDetailByID(1402294529)
+# myTokped._getOrderDetailByID(1402294529)
 
 # start_ts    = int(time.time()) - (3600 * 3)
 # end_ts      = int(time.time())
@@ -26,11 +26,11 @@ myTokped._getOrderDetailByID(1402294529)
 
 #################################################################################
 
-# from app import App
+from app import App
 
-# a = App()
-# a.syncTokpedNewOrderData()
-# a.tp._getOrderDetailByID(1402294529)
+a = App()
+a.syncTokpedExsOrderData()
+a.syncTokpedNewOrderData()
 
 # print("Finsihed")
 

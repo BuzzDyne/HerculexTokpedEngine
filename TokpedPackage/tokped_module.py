@@ -84,6 +84,7 @@ class TokpedModule:
         return (response.json()['data']['order_id'], response.json()['data']['order_status'])
 
     def getBatchOrderDetailByIDs(self, list_order_ids):
+        '''Returns list of tuples (id, status)'''
         list_of_tuples_order_detail = []
 
         for id in list_order_ids:
