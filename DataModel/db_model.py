@@ -3,18 +3,18 @@ from DataModel.utils import convertISO8601toUnix
 
 
 class Order():
-    def __init__(self, order_id, buyer_id, invoice_ref_num, order_status, ts_created, ts_acc_by, ts_ship_by, list_of_items):
-        self.order_id           = order_id
+    def __init__(self, ecommerce_code, feeding_dt, pltf_deadline_dt, buyer_id, ecom_order_id, ecom_order_status, invoice_ref, list_of_items=None):
+        self.ecommerce_code     = ecommerce_code
+        self.feeding_dt         = feeding_dt
+        self.pltf_deadline_dt   = pltf_deadline_dt
         self.buyer_id           = buyer_id
-        self.invoice_ref_num    = invoice_ref_num
-        self.order_status       = order_status
-        self.ts_created         = ts_created
-        self.ts_acc_by          = ts_acc_by
-        self.ts_ship_by         = ts_ship_by
-        self.list_of_items    = list_of_items
+        self.ecom_order_id      = ecom_order_id
+        self.ecom_order_status	= ecom_order_status	
+        self.invoice_ref        = invoice_ref
+        self.list_of_items      = list_of_items
 
     def __str__(self) -> str:
-        return f"OrderID: {self.order_id}"
+        return f"OrderID: {self.ecom_order_id}"
 
 
 class OrderItem():
@@ -26,23 +26,25 @@ class OrderItem():
         self.quantity           = quantity
         self.product_price      = product_price
 
+def createTokpedOrder(input) -> Order:
+    obj = createOrder(input, "T")
+    return obj
 
-def createOrder(input) -> Order:
+def createOrder(input, ecom_code) -> Order:
 
     listOfDetails = createListOfOrderItem(input)
 
-    acc_by  = input['shipment_fulfillment']['accept_deadline']
     done_by = input['shipment_fulfillment']['confirm_shipping_deadline']
 
     obj = Order(
-        input['order_id'],
-        input['buyer']['id'],
-        input['invoice_ref_num'],
-        input['order_status'],
-        input['create_time'],
-        convertISO8601toUnix(acc_by)  if acc_by  != '' else None,
-        convertISO8601toUnix(done_by) if done_by != '' else None,
-        listOfDetails
+        ecommerce_code      = ecom_code,
+        feeding_dt          = input['create_time'],
+        buyer_id            = input['buyer']['id'],
+        pltf_deadline_dt    = convertISO8601toUnix(done_by) if done_by != '' else None,
+        ecom_order_id       = input['order_id'],
+        ecom_order_status   = input['order_status'],
+        invoice_ref         = input['invoice_ref_num'],
+        list_of_items       = listOfDetails
     )
 
     return obj

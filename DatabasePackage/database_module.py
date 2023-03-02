@@ -22,10 +22,10 @@ class DbModule:
     def TokpedLogActivity(self, activityType, desc):
         sql = """
             INSERT INTO GlobalLogging_TH (
-                ApplicationName, 
-                ActivityDate,
-                ActivityType,
-                Description
+                application_name, 
+                activity_date,
+                activity_type,
+                description
             ) VALUES ('TokpedEngine', %s, %s, %s)"""
         
         val = (time.strftime('%Y-%m-%d %H:%M:%S'), activityType, desc)
@@ -36,10 +36,10 @@ class DbModule:
     def LogStartJob(self):
         sql = """
             INSERT INTO GlobalLogging_TH (
-                ApplicationName, 
-                ActivityDate,
-                ActivityType,
-                Description
+                application_name, 
+                activity_date,
+                activity_type,
+                description
             ) VALUES ('TokpedEngine', %s, 'Interval Data Collection', 'JOB START')"""
         
         val = (time.strftime('%Y-%m-%d %H:%M:%S'))
@@ -50,10 +50,10 @@ class DbModule:
     def LogEndJob(self):
         sql = """
             INSERT INTO GlobalLogging_TH (
-                ApplicationName, 
-                ActivityDate,
-                ActivityType,
-                Description
+                application_name, 
+                activity_date,
+                activity_type,
+                description
             ) VALUES ('TokpedEngine', FROM_UNIXTIME(%s), 'Interval Data Collection', 'JOB END')"""
         
         val = (time.strftime('%Y-%m-%d %H:%M:%S'))
@@ -64,10 +64,10 @@ class DbModule:
     def Logging(self, msg:str):
         sql = """
             INSERT INTO GlobalLogging_TH (
-                ApplicationName, 
-                ActivityDate,
-                ActivityType,
-                Description
+                application_name, 
+                activity_date,
+                activity_type,
+                description
             ) VALUES ('TokpedEngine', %s, 'Interval Data Collection', %s)"""
         
         val = (time.strftime('%Y-%m-%d %H:%M:%S'), msg)
@@ -80,8 +80,8 @@ class DbModule:
         sql = """
             INSERT INTO TPOrder_TM (
                 order_id, buyer_id, invoice_ref_num, order_status,
-                ts_created, ts_acc_by, ts_ship_by,
-                insert_ts
+                dt_created, dt_acc_by, dt_ship_by,
+                ts_insert
             ) VALUES (
                 %s, %s, %s, %s,
                 FROM_UNIXTIME(%s),FROM_UNIXTIME(%s),FROM_UNIXTIME(%s),
@@ -91,7 +91,7 @@ class DbModule:
         
         param = (
             data.order_id, data.buyer_id, data.invoice_ref_num, data.order_status,
-            data.ts_created, data.ts_acc_by, data.ts_ship_by,
+            data.dt_created, data.dt_acc_by, data.dt_ship_by,
             time.strftime('%Y-%m-%d %H:%M:%S')
         )
 

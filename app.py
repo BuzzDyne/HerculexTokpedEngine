@@ -162,7 +162,7 @@ class App:
         countData = len(resultList) if resultList else 0
         self.db.TokpedLogActivity("Sync Orders", f"Got {countData} Orders from TokpedAPI")
 
-        if(resultList):
+        if(resultList): # TODO Pickup From here
             # Clean ListOfOrder (Remove Duplicate and Separate Existing IDs)
             cleanList, update_dict = self._cleanListOfOrder(resultList)
             self.db.TokpedLogActivity("Sync Orders", f"Pushing {len(cleanList)} Orders to DB (Cleaning Process Done)")
