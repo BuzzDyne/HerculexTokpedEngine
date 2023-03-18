@@ -14,16 +14,16 @@ class App:
         self.tp = TokpedModule()
     
     #region Private Functions
-    def _findOrderStatusFromListByID(self, list_of_orders, order_id):
+    def _findOrderStatusFromListByID(self, list_of_orders: List[Order], order_id):
         for x in list_of_orders:
-            if x.order_id == order_id:
-                return x.order_status
+            if x.ecom_order_id == order_id:
+                return x.ecom_order_id
 
     def _cleanListOfOrder(self, list_of_new_orders: List[Order]) -> Tuple[List[Order]]:
         '''returns tuple of two elements, new_list (list) and update_list (dictionary)'''
         # Remove Duplicate OrderID
-        unique_list_of_new_orders     = {o.order_id: o for o in list_of_new_orders}.values()
-        listOfOrderIDs  = [o.order_id for o in unique_list_of_new_orders]
+        unique_list_of_new_orders     = {o.ecom_order_id: o for o in list_of_new_orders}.values()
+        listOfOrderIDs  = [o.ecom_order_id for o in unique_list_of_new_orders]
 
         # Get existing OrderDetail
         list_of_existing_order_detail   = self.db.getOrderDetailsByIDs(listOfOrderIDs)
@@ -32,8 +32,8 @@ class App:
 
 
         # Remove Existing OrderID
-        new_list    = [x for x in unique_list_of_new_orders if x.order_id not in list_of_existing_order_id]
-        dupe_list   = [x for x in unique_list_of_new_orders if x.order_id in list_of_existing_order_id]
+        new_list    = [x for x in unique_list_of_new_orders if x.ecom_order_id not in list_of_existing_order_id]
+        dupe_list   = [x for x in unique_list_of_new_orders if x.ecom_order_id in list_of_existing_order_id]
 
         # Find Order with Updated Status from Existing Orders
         update_list = {}
@@ -162,7 +162,7 @@ class App:
         countData = len(resultList) if resultList else 0
         self.db.TokpedLogActivity("Sync Orders", f"Got {countData} Orders from TokpedAPI")
 
-        if(resultList): # TODO Pickup From here
+        if(resultList): 
             # Clean ListOfOrder (Remove Duplicate and Separate Existing IDs)
             cleanList, update_dict = self._cleanListOfOrder(resultList)
             self.db.TokpedLogActivity("Sync Orders", f"Pushing {len(cleanList)} Orders to DB (Cleaning Process Done)")
@@ -170,7 +170,7 @@ class App:
             # Insert ListOfOrder to DB
             for o in cleanList:
                 for item in o.list_of_items:
-                    self.db.insertOrderItem(item)
+                    self.db.insertOrderItem(item) # TODO Pickup From here
                 self.db.insertOrder(o)
             
             # Update status

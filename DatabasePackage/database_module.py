@@ -127,14 +127,14 @@ class DbModule:
 
         return listOfOrderIDs
 
-    def getOrderDetailsByIDs(self, listOfIDs) -> List[Tuple[str]]:
+    def getOrderDetailsByIDs(self, listOfIDs, ecommerce_code) -> List[Tuple[str]]:
         """Returns list of Tuples(OrderID, Status) already in DB"""
-        format_string = ','.join(['%s'] * len(listOfIDs))
+        format_string = (','.join(['%s'] * len(listOfIDs)), ecommerce_code)
 
         sql = """
-            SELECT order_id, order_status
-            FROM TPOrder_TM
-            WHERE order_id IN (%s)
+            SELECT ecom_order_id, ecom_order_status
+            FROM Order_TM
+            WHERE order_id IN (%s) AND ecommerce_code = "%s"
         """ % format_string
 
         self.cursor.execute(sql, tuple(listOfIDs))
