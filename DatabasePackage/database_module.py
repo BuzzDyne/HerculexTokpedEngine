@@ -21,7 +21,7 @@ class DbModule:
     #region Logging
     def TokpedLogActivity(self, activityType, desc):
         sql = """
-            INSERT INTO GlobalLogging_TH (
+            INSERT INTO globallogging_th (
                 application_name, 
                 activity_date,
                 activity_type,
@@ -35,7 +35,7 @@ class DbModule:
 
     def LogStartJob(self):
         sql = """
-            INSERT INTO GlobalLogging_TH (
+            INSERT INTO globallogging_th (
                 application_name, 
                 activity_date,
                 activity_type,
@@ -49,7 +49,7 @@ class DbModule:
 
     def LogEndJob(self):
         sql = """
-            INSERT INTO GlobalLogging_TH (
+            INSERT INTO globallogging_th (
                 application_name, 
                 activity_date,
                 activity_type,
@@ -63,7 +63,7 @@ class DbModule:
 
     def Logging(self, msg:str):
         sql = """
-            INSERT INTO GlobalLogging_TH (
+            INSERT INTO globallogging_th (
                 application_name, 
                 activity_date,
                 activity_type,
@@ -78,7 +78,7 @@ class DbModule:
 
     def insertOrder(self, data:Order):
         sql = """
-            INSERT INTO TPOrder_TM (
+            INSERT INTO order_tm (
                 order_id, buyer_id, invoice_ref_num, order_status,
                 dt_created, dt_acc_by, dt_ship_by,
                 ts_insert
@@ -100,7 +100,7 @@ class DbModule:
 
     def insertOrderItem(self, data:OrderItem):
         sql = """
-            INSERT INTO TPOrderItem_TM (
+            INSERT INTO orderitem_tr (
                 order_id, product_id, product_name, quantity, product_price
             ) VALUES (%s, %s, %s, %s, %s)
         """
@@ -114,7 +114,7 @@ class DbModule:
         """Returns list of OrderIDs already in DB"""
         sql = """
             SELECT DISTINCT order_id 
-            FROM TPOrder_TM
+            FROM order_tm
         """
 
         self.cursor.execute(sql)
@@ -133,7 +133,7 @@ class DbModule:
 
         sql = """
             SELECT ecom_order_id, ecom_order_status
-            FROM Order_TM
+            FROM order_tm
             WHERE order_id IN (%s) AND ecommerce_code = "%s"
         """ % format_string
 
@@ -148,7 +148,7 @@ class DbModule:
 
         sql = """
             SELECT order_id, order_status
-            FROM TPOrder_TM
+            FROM order_tm
             WHERE order_status NOT IN (%s)
         """ % format_string
 
@@ -162,7 +162,7 @@ class DbModule:
             SELECT 
                 UNIX_TIMESTAMP(initial_sync), 
                 UNIX_TIMESTAMP(last_synced)
-            FROM HCXProcessSyncStatus_TM
+            FROM hcxprocessSyncStatus_TM
             WHERE platform_name = "TOKOPEDIA"
             LIMIT 1
         """
@@ -177,7 +177,7 @@ class DbModule:
     
     def setTokpedLastSynced(self, dt_input):
         sql = """
-            UPDATE HCXProcessSyncStatus_TM
+            UPDATE hcxprocessSyncStatus_TM
             SET
                 last_synced = %s
             WHERE platform_name = "TOKOPEDIA"
@@ -194,7 +194,7 @@ class DbModule:
         for order_id, order_status in dictOfIDsAndStatuses.items():
 
             sql = """
-                UPDATE TPOrder_TM
+                UPDATE order_tm
                 SET
                     order_status = %s,
                     last_updated_ts = %s
