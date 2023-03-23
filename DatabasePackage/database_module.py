@@ -79,20 +79,17 @@ class DbModule:
     def insertOrder(self, data:Order):
         sql = """
             INSERT INTO order_tm (
-                order_id, buyer_id, invoice_ref_num, order_status,
-                dt_created, dt_acc_by, dt_ship_by,
-                ts_insert
+                ecommerce_code, ecom_order_id, buyer_id, invoice_ref, ecom_order_status,
+                pltf_deadline_dt, feeding_dt
             ) VALUES (
-                %s, %s, %s, %s,
-                FROM_UNIXTIME(%s),FROM_UNIXTIME(%s),FROM_UNIXTIME(%s),
-                %s
+                %s, %s, %s, %s, %s,
+                FROM_UNIXTIME(%s),%s
             )
         """
         
         param = (
-            data.order_id, data.buyer_id, data.invoice_ref_num, data.order_status,
-            data.dt_created, data.dt_acc_by, data.dt_ship_by,
-            time.strftime('%Y-%m-%d %H:%M:%S')
+            data.ecommerce_code, data.ecom_order_id, data.buyer_id, data.invoice_ref, data.ecom_order_status,
+            data.pltf_deadline_dt, time.strftime('%Y-%m-%d %H:%M:%S')
         )
 
         self.cursor.execute(sql, param)
@@ -101,7 +98,7 @@ class DbModule:
     def insertOrderItem(self, data:OrderItem):
         sql = """
             INSERT INTO orderitem_tr (
-                order_id, product_id, product_name, quantity, product_price
+                ecom_order_id, ecom_product_id, product_name, quantity, product_price
             ) VALUES (%s, %s, %s, %s, %s)
         """
         
@@ -134,7 +131,7 @@ class DbModule:
         sql = """
             SELECT ecom_order_id, ecom_order_status
             FROM order_tm
-            WHERE order_id IN (%s) AND ecommerce_code = "%s"
+            WHERE ecom_order_id IN (%s) AND ecommerce_code = "%s"
         """ % format_string
 
         self.cursor.execute(sql, tuple(listOfIDs))

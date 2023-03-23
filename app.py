@@ -26,7 +26,7 @@ class App:
         listOfOrderIDs  = [o.ecom_order_id for o in unique_list_of_new_orders]
 
         # Get existing OrderDetail
-        list_of_existing_order_detail   = self.db.getOrderDetailsByIDs(listOfOrderIDs)
+        list_of_existing_order_detail   = self.db.getOrderDetailsByIDs(listOfOrderIDs, "T")
         list_of_existing_order_id       = [o[0] for o in list_of_existing_order_detail]
         dict_of_order_existing          = dict(list_of_existing_order_detail)
 
@@ -54,7 +54,7 @@ class App:
         listOfOrders: List[Order] = []
 
         for o in jsonOfOrders:
-            listOfOrders.append(createOrder(o))
+            listOfOrders.append(createOrder(o, "T"))
 
         return listOfOrders
 
