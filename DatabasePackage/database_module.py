@@ -193,9 +193,9 @@ class DbModule:
             sql = """
                 UPDATE order_tm
                 SET
-                    order_status = %s,
+                    ecom_order_status = %s,
                     last_updated_ts = %s
-                WHERE order_id = %s
+                WHERE ecom_order_id = %s
             """
 
             val = (order_status, ts.strftime('%Y-%m-%d %H:%M:%S'), order_id)
