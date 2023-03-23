@@ -194,7 +194,7 @@ class DbModule:
                 UPDATE order_tm
                 SET
                     ecom_order_status = %s,
-                    last_updated_ts = %s
+                    last_updated_dt = %s
                 WHERE ecom_order_id = %s
             """
 
