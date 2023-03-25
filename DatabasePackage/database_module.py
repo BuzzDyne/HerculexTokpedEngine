@@ -144,9 +144,9 @@ class DbModule:
         format_string = ','.join(['%s'] * len(listOfStatuses))
 
         sql = """
-            SELECT order_id, order_status
+            SELECT ecom_order_id, ecom_order_status
             FROM order_tm
-            WHERE order_status NOT IN (%s)
+            WHERE ecom_order_status NOT IN (%s)
         """ % format_string
 
         self.cursor.execute(sql, tuple(listOfStatuses))
@@ -194,7 +194,7 @@ class DbModule:
                 UPDATE order_tm
                 SET
                     ecom_order_status = %s,
-                    last_updated_dt = %s
+                    last_updated_ts = %s
                 WHERE ecom_order_id = %s
             """
 

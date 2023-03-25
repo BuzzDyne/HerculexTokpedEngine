@@ -29,7 +29,7 @@
 from app import App
 
 a = App()
-# a.syncTokpedExsOrderData()
+a.syncTokpedExsOrderData()
 a.syncTokpedNewOrderData()
 
 # print("Finsihed")
