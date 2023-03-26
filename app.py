@@ -94,17 +94,18 @@ class App:
     
     def syncTokpedExsOrderData(self):
         listStatusNotNeedToUpdate = ['0','3','5','6','10','15','520','550','700']
+        PROCESS_NAME = "Sync Existing Orders"
 
         # Logging
-        self.db.TokpedLogActivity("Sync Existing Orders", "Process BEGIN")
+        self.db.TokpedLogActivity(PROCESS_NAME, "Process BEGIN")
 
         # Ambil list order_id yang harus diupdate
         listOldOrderDetails = self.db.getOrderDetailsByNeedToUpdated(listStatusNotNeedToUpdate)
-        self.db.TokpedLogActivity("Sync Existing Orders", f"Found {len(listOldOrderDetails)} Orders from DB to be updated.")
+        self.db.TokpedLogActivity(PROCESS_NAME, f"Found {len(listOldOrderDetails)} Orders from DB to be updated.")
 
         # Hit API Tokped
         listNewOrderDetails = self.tp.getBatchOrderDetailByIDs([x[0] for x in listOldOrderDetails])
-        self.db.TokpedLogActivity("Sync Existing Orders", f"Got {len(listNewOrderDetails)} Orders from Tokped.")
+        self.db.TokpedLogActivity(PROCESS_NAME, f"Got {len(listNewOrderDetails)} Orders from Tokped.")
 
         # Clean listNewOrderDetails TODO
         dictOldOrderDetails = {}
@@ -120,26 +121,27 @@ class App:
 
         # Push updates
         self.db.setBatchUpdateOrdersStatus(dictNewOrderDetails)
-        self.db.TokpedLogActivity("Sync Existing Orders", f"Updated {len(dictNewOrderDetails)} Orders.")
+        self.db.TokpedLogActivity(PROCESS_NAME, f"Updated {len(dictNewOrderDetails)} Orders.")
 
-        self.db.TokpedLogActivity("Sync Existing Orders", "Process END")
+        self.db.TokpedLogActivity(PROCESS_NAME, "Process END")
 
     def syncTokpedNewOrderData(self):
         currTime = dt.now(tz.utc)
+        PROCESS_NAME = "Sync New Orders"
 
         # Logging
-        self.db.TokpedLogActivity("Sync Orders", "Process BEGIN")
+        self.db.TokpedLogActivity(PROCESS_NAME, "Process BEGIN")
 
         # Get start sync date
         sync_info = self.db.getTokpedProcessSyncDate()
         start_period    = sync_info["initial_sync"] if sync_info["last_synced"] is None else sync_info["last_synced"]
         end_period      = int(currTime.timestamp())
-        self.db.TokpedLogActivity("Sync Orders", f"StartPeriod : {start_period} | EndPeriod : {end_period}")
+        self.db.TokpedLogActivity(PROCESS_NAME, f"StartPeriod : {start_period} | EndPeriod : {end_period}")
 
 
         if start_period > end_period:
-            self.db.TokpedLogActivity("Sync Orders", "initial/last sync time is bigger than current time")
-            self.db.TokpedLogActivity("Sync Orders", "Process END")
+            self.db.TokpedLogActivity(PROCESS_NAME, "initial/last sync time is bigger than current time")
+            self.db.TokpedLogActivity(PROCESS_NAME, "Process END")
             return
 
         # Iterate API to get OrderIDs based on period
@@ -160,12 +162,12 @@ class App:
             start_time += THREE_DAYS_IN_SEC
 
         countData = len(resultList) if resultList else 0
-        self.db.TokpedLogActivity("Sync Orders", f"Got {countData} Orders from TokpedAPI")
+        self.db.TokpedLogActivity(PROCESS_NAME, f"Got {countData} Orders from TokpedAPI")
 
         if(resultList): 
             # Clean ListOfOrder (Remove Duplicate and Separate Existing IDs)
             cleanList, update_dict = self._cleanListOfOrder(resultList)
-            self.db.TokpedLogActivity("Sync Orders", f"Pushing {len(cleanList)} Orders to DB (Cleaning Process Done)")
+            self.db.TokpedLogActivity(PROCESS_NAME, f"Pushing {len(cleanList)} Orders to DB (Cleaning Process Done)")
 
             # Insert ListOfOrder to DB
             for o in cleanList:
@@ -174,7 +176,7 @@ class App:
                 self.db.insertOrder(o)
             
             # Update status
-            self.db.TokpedLogActivity("Sync Orders", f"Updating statuses of {len(update_dict)} Orders to DB")
+            self.db.TokpedLogActivity(PROCESS_NAME, f"Updating statuses of {len(update_dict)} Orders to DB")
             self.db.setBatchUpdateOrdersStatus(update_dict)
             
 
@@ -182,6 +184,6 @@ class App:
         self.db.setTokpedLastSynced(currTime)
 
         # Logging
-        self.db.TokpedLogActivity("Sync Orders", "Process END")
+        self.db.TokpedLogActivity(PROCESS_NAME, "Process END")
 
         return
