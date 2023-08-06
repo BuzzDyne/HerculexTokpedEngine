@@ -227,7 +227,7 @@ class DbModule:
         """
         
         param = (
-            order_id, activity_msg, "0"
+            order_id, activity_msg, "1"
         )
 
         self.cursor.execute(sql, param)
