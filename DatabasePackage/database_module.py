@@ -3,6 +3,7 @@ import mysql.connector
 from typing import Tuple, Dict, List
 
 from _cred import Credentials
+from DatabasePackage.constants import ORDER_STATUS_MESSAGES
 from DataModel.db_model import Order, OrderItem
 
 from datetime import datetime as dt
@@ -76,7 +77,11 @@ class DbModule:
         self.cnx.commit()
     #endregion
 
-    def insertOrder(self, data:Order):
+    def insertNewOrder(self, data:Order):
+        order_id = self._insertOrder(data)
+        self._insertOrderTracking(order_id, "Inserted data from Tokped to system")
+  
+    def _insertOrder(self, data:Order):
         sql = """
             INSERT INTO order_tm (
                 ecommerce_code, ecom_order_id, buyer_id, invoice_ref, ecom_order_status,
@@ -94,6 +99,8 @@ class DbModule:
 
         self.cursor.execute(sql, param)
         self.cnx.commit()
+
+        return self.cursor.lastrowid
 
     def insertOrderItem(self, data:OrderItem):
         sql = """
@@ -157,8 +164,8 @@ class DbModule:
     def getTokpedProcessSyncDate(self) -> Dict:
         sql = """
             SELECT 
-                UNIX_TIMESTAMP(initial_sync), 
-                UNIX_TIMESTAMP(last_synced)
+                initial_sync, 
+                last_synced
             FROM hcxprocessSyncStatus_TM
             WHERE platform_name = "TOKOPEDIA"
             LIMIT 1
@@ -172,15 +179,15 @@ class DbModule:
             "last_synced"       : res[1]
         }
     
-    def setTokpedLastSynced(self, dt_input):
+    def setTokpedLastSynced(self, input_unixTS):
         sql = """
             UPDATE hcxprocessSyncStatus_TM
             SET
                 last_synced = %s
             WHERE platform_name = "TOKOPEDIA"
         """
-
-        val = (dt_input.strftime('%Y-%m-%d %H:%M:%S'),) if dt_input is not None else (dt_input,)
+        
+        val = (input_unixTS,)
 
         self.cursor.execute(sql, val)
         self.cnx.commit()
@@ -188,7 +195,7 @@ class DbModule:
     def setBatchUpdateOrdersStatus(self, dictOfIDsAndStatuses):
         ts = dt.now(tz.utc)
 
-        for order_id, order_status in dictOfIDsAndStatuses.items():
+        for order_ecom_id, order_status in dictOfIDsAndStatuses.items():
 
             sql = """
                 UPDATE order_tm
@@ -198,8 +205,50 @@ class DbModule:
                 WHERE ecom_order_id = %s
             """
 
-            val = (order_status, ts.strftime('%Y-%m-%d %H:%M:%S'), order_id)
+            val = (order_status, ts.strftime('%Y-%m-%d %H:%M:%S'), order_ecom_id)
 
             self.cursor.execute(sql, val)
+                                
+            # Insert order tracking entry
+            order_id = self._getOrderTmIdByEcomOrderId(order_ecom_id)
+            status_message = ORDER_STATUS_MESSAGES.get(order_status, 'Unknown')
+            activity_msg = f"Order #{order_id} status updated to {order_status} ({status_message})"
+            self._insertOrderTracking(order_id, activity_msg)
 
         self.cnx.commit()
+
+    def _insertOrderTracking(self, order_id, activity_msg):
+        sql = """
+            INSERT INTO ordertracking_th (
+                order_id, activity_msg, user_id
+            ) VALUES (
+                %s, %s, %s
+            )
+        """
+        
+        param = (
+            order_id, activity_msg, "0"
+        )
+
+        self.cursor.execute(sql, param)
+        self.cnx.commit()
+
+    def _getOrderTmIdByEcomOrderId(self, ecom_order_id):
+        sql = """
+            SELECT id
+            FROM order_tm
+            WHERE ecom_order_id = %s
+            ORDER BY id ASC
+            LIMIT 1
+        """
+
+        val = (ecom_order_id,)
+
+        self.cursor.execute(sql, val)
+        result = self.cursor.fetchone()
+
+        if result:
+            order_tm_id = result[0]
+            return order_tm_id
+        else:
+            return None

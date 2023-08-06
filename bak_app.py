@@ -1,3 +1,4 @@
+import time
 from typing import List, Tuple
 
 from datetime import datetime as dt
@@ -15,8 +16,8 @@ class App:
     #region Private Functions
     def _findOrderStatusFromListByID(self, list_of_orders: List[Order], order_id):
         for x in list_of_orders:
-            if str(x.ecom_order_id) == order_id:
-                return str(x.ecom_order_status)
+            if x.ecom_order_id == order_id:
+                return x.ecom_order_id
 
     def _cleanListOfOrder(self, list_of_new_orders: List[Order]) -> Tuple[List[Order]]:
         '''returns tuple of two elements, new_list (list) and update_list (dictionary)'''
@@ -31,15 +32,15 @@ class App:
 
 
         # Remove Existing OrderID
-        new_list    = [x for x in unique_list_of_new_orders if str(x.ecom_order_id) not in list_of_existing_order_id]
-        dupe_list   = [x for x in unique_list_of_new_orders if str(x.ecom_order_id) in list_of_existing_order_id]
+        new_list    = [x for x in unique_list_of_new_orders if x.ecom_order_id not in list_of_existing_order_id]
+        dupe_list   = [x for x in unique_list_of_new_orders if x.ecom_order_id in list_of_existing_order_id]
 
         # Find Order with Updated Status from Existing Orders
         update_list = {}
         for id, status in dict_of_order_existing.items():
             newStatus = self._findOrderStatusFromListByID(dupe_list, id)
 
-            if status != newStatus and newStatus != None:
+            if status != newStatus:
                 update_list[id] = newStatus
 
         return (new_list, update_list)
@@ -56,6 +57,39 @@ class App:
             listOfOrders.append(createOrder(o, "T"))
 
         return listOfOrders
+
+    def _testBlindPushOrderToDB(self):
+        # Get Orders from Tokped
+        now_unix = int(dt.now(tz.utc).timestamp())
+        start_unix = now_unix - (60 * 60 * 24 * 3)
+
+        jsonOfOrders = self.tp.getOrderBetweenTS(start_unix, now_unix)
+
+        listOfOrders: List[Order] = []
+
+        for o in jsonOfOrders:
+            listOfOrders.append(createOrder(o))
+
+        # Push to DB
+        for o in listOfOrders:
+            for item in o.list_of_items:
+                self.db.insertOrderItem(item)
+            self.db._insertOrder(o)
+
+    def _testCheckMaxQuery(self, iter):
+        # Get Orders from Tokped
+        now_unix    = int(time.time())  - (86400 * iter)
+        start_unix  = now_unix          - (86400 * 3)
+
+        jsonOfOrders = self.tp.getOrderBetweenTS(start_unix, now_unix)
+
+        listOfOrders: List[Order] = []
+
+
+        for o in jsonOfOrders or []:
+            listOfOrders.append(createOrder(o))
+        
+        return len(listOfOrders)
     #endregion
     
     def syncTokpedExsOrderData(self):
@@ -88,7 +122,7 @@ class App:
         self.db.TokpedLogActivity(PROCESS_NAME, "Process END")
 
     def syncTokpedNewOrderData(self):
-        currUnixTS = int(dt.now(tz.utc).timestamp())
+        currTime = dt.now(tz.utc)
         PROCESS_NAME = "Sync New Orders"
 
         # Logging
@@ -97,7 +131,7 @@ class App:
         # Get start sync date
         sync_info = self.db.getTokpedProcessSyncDate()
         start_period    = sync_info["initial_sync"] if sync_info["last_synced"] is None else sync_info["last_synced"]
-        end_period      = currUnixTS
+        end_period      = int(currTime.timestamp())
         self.db.TokpedLogActivity(PROCESS_NAME, f"StartPeriod : {start_period} | EndPeriod : {end_period}")
 
 
@@ -113,7 +147,7 @@ class App:
         start_time  = start_period
         end_time    = 0
 
-        while start_time < end_period:
+        while end_time < end_period:
             temp = start_time + THREE_DAYS_IN_SEC
             end_time = temp if temp < end_period else end_period
             
@@ -143,7 +177,7 @@ class App:
             
 
         # Update LastSynced
-        self.db.setTokpedLastSynced(currUnixTS)
+        self.db.setTokpedLastSynced(currTime)
 
         # Logging
         self.db.TokpedLogActivity(PROCESS_NAME, "Process END")
