@@ -197,15 +197,25 @@ class DbModule:
 
         for order_ecom_id, order_status in dictOfIDsAndStatuses.items():
 
-            sql = """
-                UPDATE order_tm
-                SET
-                    ecom_order_status = %s,
-                    last_updated_ts = %s
-                WHERE ecom_order_id = %s
-            """
-
-            val = (order_status, ts.strftime('%Y-%m-%d %H:%M:%S'), order_ecom_id)
+            if order_status == "500" :
+                sql = """
+                    UPDATE order_tm
+                    SET
+                        ecom_order_status = %s,
+                        last_updated_ts = %s,
+                        shipped_dt = %s
+                    WHERE ecom_order_id = %s
+                """
+                val = (order_status, ts.strftime('%Y-%m-%d %H:%M:%S'), ts.strftime('%Y-%m-%d %H:%M:%S'), order_ecom_id)
+            else:
+                sql = """
+                    UPDATE order_tm
+                    SET
+                        ecom_order_status = %s,
+                        last_updated_ts = %s
+                    WHERE ecom_order_id = %s
+                """
+                val = (order_status, ts.strftime('%Y-%m-%d %H:%M:%S'), order_ecom_id)
 
             self.cursor.execute(sql, val)
                                 
