@@ -192,12 +192,12 @@ class DbModule:
         self.cursor.execute(sql, val)
         self.cnx.commit()
 
-    def setBatchUpdateOrdersStatus(self, dictOfIDsAndStatuses):
+    def setBatchUpdateOrdersStatus(self, listOfDicts_UpdatedOrderData):
         ts = dt.now(tz.utc)
+        FINISHED_ORDER_STATUSES = ['500','501','520','530','540','550','600','601','690','700']
 
-        for order_ecom_id, order_status in dictOfIDsAndStatuses.items():
-
-            if order_status == "500" :
+        for order_data in listOfDicts_UpdatedOrderData:
+            if order_data["order_status"] in FINISHED_ORDER_STATUSES :
                 sql = """
                     UPDATE order_tm
                     SET
@@ -206,7 +206,12 @@ class DbModule:
                         shipped_dt = %s
                     WHERE ecom_order_id = %s
                 """
-                val = (order_status, ts.strftime('%Y-%m-%d %H:%M:%S'), ts.strftime('%Y-%m-%d %H:%M:%S'), order_ecom_id)
+                shipped_date = ts.strftime('%Y-%m-%d %H:%M:%S')
+
+                if order_data["shipping_date"]: #'2023-08-08T09:13:14.681548Z'
+                    shipped_date = dt.strptime(order_data["shipping_date"], '%Y-%m-%dT%H:%M:%S.%f%z').strftime('%Y-%m-%d %H:%M:%S')
+
+                val = (order_data["order_status"], ts.strftime('%Y-%m-%d %H:%M:%S'), shipped_date, order_data["order_id"])
             else:
                 sql = """
                     UPDATE order_tm
@@ -215,15 +220,15 @@ class DbModule:
                         last_updated_ts = %s
                     WHERE ecom_order_id = %s
                 """
-                val = (order_status, ts.strftime('%Y-%m-%d %H:%M:%S'), order_ecom_id)
+                val = (order_data["order_status"], ts.strftime('%Y-%m-%d %H:%M:%S'), order_data["order_id"])
 
             self.cursor.execute(sql, val)
                                 
             # Insert order tracking entry
-            order_id = self._getOrderTmIdByEcomOrderId(order_ecom_id)
-            status_message = ORDER_STATUS_MESSAGES.get(order_status, 'Unknown')
-            activity_msg = f"Order #{order_id} status updated to {order_status} ({status_message})"
-            self._insertOrderTracking(order_id, activity_msg)
+            order_db_id = self._getOrderTmIdByEcomOrderId(order_data["order_id"])
+            status_message = ORDER_STATUS_MESSAGES.get(order_data['order_status'], 'Unknown')
+            activity_msg = f"Order #{order_db_id} status updated to {order_data['order_status']} ({status_message})"
+            self._insertOrderTracking(order_db_id, activity_msg)
 
         self.cnx.commit()
 

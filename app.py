@@ -59,7 +59,8 @@ class App:
     #endregion
     
     def syncTokpedExsOrderData(self):
-        listStatusNotNeedToUpdate = ['0','3','5','6','10','15','520','550','700']
+        listStatusNotNeedToUpdate = ['0','3','5','6','10','15','500','501','520','530','540','550','600','601','690','700']
+
         PROCESS_NAME = "Sync Existing Orders"
 
         # Logging
@@ -75,15 +76,23 @@ class App:
         self.db.TokpedLogActivity(PROCESS_NAME, f"Got {len(listNewOrderDetails)} Orders from Tokped.")
 
         dictOldOrderDetails = {x[0]: x[1] for x in listOldOrderDetails}
-        dictNewOrderDetails = {}
+        listOfDicts_NewOrderDetails = []
 
-        for x in listNewOrderDetails:
-            if dictOldOrderDetails[str(x[0])] != str(x[1]):
-                dictNewOrderDetails[str(x[0])] = str(x[1])
+        for order_data in listNewOrderDetails:
+            order_id = order_data['order_id']
+            if order_id in dictOldOrderDetails:
+                old_status = dictOldOrderDetails[order_id]
+                new_status = order_data['order_status']
+                if old_status != new_status:
+                    listOfDicts_NewOrderDetails.append({
+                        'order_id'      : order_id,
+                        'order_status'  : new_status,
+                        'shipping_date' : order_data['shipping_date']
+                    })
 
         # Push updates
-        self.db.setBatchUpdateOrdersStatus(dictNewOrderDetails)
-        self.db.TokpedLogActivity(PROCESS_NAME, f"Updated {len(dictNewOrderDetails)} Orders.")
+        self.db.setBatchUpdateOrdersStatus(listOfDicts_NewOrderDetails)
+        self.db.TokpedLogActivity(PROCESS_NAME, f"Updated {len(listOfDicts_NewOrderDetails)} Orders.")
 
         self.db.TokpedLogActivity(PROCESS_NAME, "Process END")
 

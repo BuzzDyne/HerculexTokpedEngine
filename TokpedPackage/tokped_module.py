@@ -72,22 +72,26 @@ class TokpedModule:
             response = requests.get(
                 f'https://fs.tokopedia.net/v2/fs/{self.fsID}/order?order_id={order_id}',
                 headers = header
-            ) 
-        except requests.RequestException as e:
-            raise SystemExit(e)
+            )
 
-        try:
             response.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            raise SystemExit(f"Error: {str(e)}")
 
-        return (response.json()['data']['order_id'], response.json()['data']['order_status'])
+            order_data = response.json()['data']
+            return {
+                'order_id'      : str(order_data['order_id']),
+                'order_status'  : str(order_data['order_status']),
+                'shipping_date' : str(order_data['shipping_date'])
+            }
+        except requests.exceptions.HTTPError as e:
+          raise SystemExit(f"Error during API request: {e}")
+        except requests.RequestException as e:
+            raise SystemExit(f"HTTP Error: {e}")
 
     def getBatchOrderDetailByIDs(self, list_order_ids):
         '''Returns list of tuples (id, status)'''
-        list_of_tuples_order_detail = []
+        list_of_dicts_order_details = []
 
         for id in list_order_ids:
-            list_of_tuples_order_detail.append(self._getOrderDetailByID(id))
+            list_of_dicts_order_details.append(self._getOrderDetailByID(id))
 
-        return list_of_tuples_order_detail
+        return list_of_dicts_order_details
