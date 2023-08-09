@@ -166,7 +166,7 @@ class DbModule:
             SELECT 
                 initial_sync, 
                 last_synced
-            FROM hcxprocessSyncStatus_TM
+            FROM hcxprocesssyncstatus_tm
             WHERE platform_name = "TOKOPEDIA"
             LIMIT 1
         """
@@ -181,7 +181,7 @@ class DbModule:
     
     def setTokpedLastSynced(self, input_unixTS):
         sql = """
-            UPDATE hcxprocessSyncStatus_TM
+            UPDATE hcxprocesssyncstatus_tm
             SET
                 last_synced = %s
             WHERE platform_name = "TOKOPEDIA"
