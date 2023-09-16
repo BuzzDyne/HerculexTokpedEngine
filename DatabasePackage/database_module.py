@@ -114,31 +114,14 @@ class DbModule:
         self.cursor.execute(sql, param)
         self.cnx.commit()
 
-    def getAllOrderID(self) -> List[str]:
-        """Returns list of OrderIDs already in DB"""
-        sql = """
-            SELECT DISTINCT order_id 
-            FROM order_tm
-        """
-
-        self.cursor.execute(sql)
-        res = self.cursor.fetchall()
-
-        listOfOrderIDs = []
-
-        for x in res:
-            listOfOrderIDs.append(x[0])
-
-        return listOfOrderIDs
-
-    def getOrderDetailsByIDs(self, listOfIDs, ecommerce_code) -> List[Tuple[str]]:
+    def getOrderDetailsByIDs(self, listOfIDs) -> List[Tuple[str]]:
         """Returns list of Tuples(OrderID, Status) already in DB"""
-        format_string = (','.join(['%s'] * len(listOfIDs)), ecommerce_code)
+        format_string = (','.join(['%s'] * len(listOfIDs)))
 
         sql = """
             SELECT ecom_order_id, ecom_order_status
             FROM order_tm
-            WHERE ecom_order_id IN (%s) AND ecommerce_code = "%s"
+            WHERE ecom_order_id IN (%s) AND ecommerce_code = "T"
         """ % format_string
 
         self.cursor.execute(sql, tuple(listOfIDs))
@@ -146,17 +129,18 @@ class DbModule:
 
         return res
 
-    def getOrderDetailsByNeedToUpdated(self, listOfStatuses) -> List[Tuple[str]]:
+    def getOrderDetailsByNeedToUpdated(self) -> List[Tuple[str]]:
         """Returns list of Tuples(OrderID, Status) that needs to be updated in DB"""
-        format_string = ','.join(['%s'] * len(listOfStatuses))
+        listStatusNotNeedToUpdate = ['0','3','5','6','10','15','500','501','520','530','540','550','600','601','690','700']
+        format_string = ','.join(['%s'] * len(listStatusNotNeedToUpdate))
 
         sql = """
             SELECT ecom_order_id, ecom_order_status
             FROM order_tm
-            WHERE ecom_order_status NOT IN (%s)
+            WHERE ecom_order_status NOT IN (%s) AND ecommerce_code = "T"
         """ % format_string
 
-        self.cursor.execute(sql, tuple(listOfStatuses))
+        self.cursor.execute(sql, tuple(listStatusNotNeedToUpdate))
         res = self.cursor.fetchall()
 
         return res
@@ -204,7 +188,7 @@ class DbModule:
                         ecom_order_status = %s,
                         last_updated_ts = %s,
                         shipped_dt = %s
-                    WHERE ecom_order_id = %s
+                    WHERE ecom_order_id = %s AND ecommerce_code = "T"
                 """
                 shipped_date = ts.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -218,7 +202,7 @@ class DbModule:
                     SET
                         ecom_order_status = %s,
                         last_updated_ts = %s
-                    WHERE ecom_order_id = %s
+                    WHERE ecom_order_id = %s AND ecommerce_code = "T"
                 """
                 val = (order_data["order_status"], ts.strftime('%Y-%m-%d %H:%M:%S'), order_data["order_id"])
 
@@ -252,7 +236,7 @@ class DbModule:
         sql = """
             SELECT id
             FROM order_tm
-            WHERE ecom_order_id = %s
+            WHERE ecom_order_id = %s AND ecommerce_code = "T"
             ORDER BY id ASC
             LIMIT 1
         """

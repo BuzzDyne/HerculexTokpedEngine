@@ -25,7 +25,7 @@ class App:
         listOfOrderIDs  = [o.ecom_order_id for o in unique_list_of_new_orders]
 
         # Get existing OrderDetail
-        list_of_existing_order_detail   = self.db.getOrderDetailsByIDs(listOfOrderIDs, "T")
+        list_of_existing_order_detail   = self.db.getOrderDetailsByIDs(listOfOrderIDs)
         list_of_existing_order_id       = [o[0] for o in list_of_existing_order_detail]
         dict_of_order_existing          = dict(list_of_existing_order_detail)
 
@@ -59,15 +59,13 @@ class App:
     #endregion
     
     def syncTokpedExsOrderData(self):
-        listStatusNotNeedToUpdate = ['0','3','5','6','10','15','500','501','520','530','540','550','600','601','690','700']
-
         PROCESS_NAME = "Sync Existing Orders"
 
         # Logging
         self.db.TokpedLogActivity(PROCESS_NAME, "Process BEGIN")
 
         # Get list of order IDs that need to be updated
-        listOldOrderDetails = self.db.getOrderDetailsByNeedToUpdated(listStatusNotNeedToUpdate)
+        listOldOrderDetails = self.db.getOrderDetailsByNeedToUpdated()
         self.db.TokpedLogActivity(PROCESS_NAME, f"Found {len(listOldOrderDetails)} Orders from DB to be updated.")
 
         # Hit API Tokped
@@ -158,3 +156,11 @@ class App:
         self.db.TokpedLogActivity(PROCESS_NAME, "Process END")
 
         return
+    
+def create():
+  app = App()
+  app.syncTokpedNewOrderData()
+
+def update():
+  app = App()
+  app.syncTokpedExsOrderData()
