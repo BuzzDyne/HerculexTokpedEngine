@@ -1,5 +1,6 @@
 import base64
 
+
 def encode(str):
     str_bytes = str.encode("ascii")
 
@@ -8,10 +9,11 @@ def encode(str):
 
     return base64_string
 
+
 def getItemFromListOfObject(listOfObjects, key, valueToMatch):
-	for x in listOfObjects:
-		if x[key] == valueToMatch:
-			print("i found it!")
-			break
-	else:
-		x = None
+    for x in listOfObjects:
+        if x[key] == valueToMatch:
+            print("i found it!")
+            break
+    else:
+        x = None

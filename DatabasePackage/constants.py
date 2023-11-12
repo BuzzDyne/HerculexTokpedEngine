@@ -20,5 +20,5 @@ ORDER_STATUS_MESSAGES = {
     "600": "Order delivered",
     "601": "Buyer open a case to finish an order",
     "690": "Fraud Review",
-    "700": "Order finished"
+    "700": "Order finished",
 }

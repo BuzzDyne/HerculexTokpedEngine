@@ -33,5 +33,3 @@ a.syncTokpedExsOrderData()
 a.syncTokpedNewOrderData()
 
 # print("Finsihed")
-
-
