@@ -88,10 +88,10 @@ class DbModule:
         sql = """
             INSERT INTO order_tm (
                 ecommerce_code, ecom_order_id, buyer_id, invoice_ref, ecom_order_status,
-                pltf_deadline_dt, feeding_dt
+                pltf_deadline_dt, feeding_dt, internal_status_id
             ) VALUES (
                 %s, %s, %s, %s, %s,
-                FROM_UNIXTIME(%s),%s
+                FROM_UNIXTIME(%s),%s,%s
             )
         """
 
@@ -103,6 +103,7 @@ class DbModule:
             data.ecom_order_status,
             data.pltf_deadline_dt,
             time.strftime("%Y-%m-%d %H:%M:%S"),
+            "000",
         )
 
         self.cursor.execute(sql, param)
