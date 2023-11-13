@@ -233,7 +233,8 @@ class DbModule:
                     SET
                         ecom_order_status = %s,
                         last_updated_ts = %s,
-                        shipped_dt = %s
+                        shipped_dt = %s,
+                        internal_status_id = %s
                     WHERE ecom_order_id = %s AND ecommerce_code = "T"
                 """
                 shipped_date = ts.strftime("%Y-%m-%d %H:%M:%S")
@@ -247,6 +248,7 @@ class DbModule:
                     order_data["order_status"],
                     ts.strftime("%Y-%m-%d %H:%M:%S"),
                     shipped_date,
+                    "999",
                     order_data["order_id"],
                 )
             else:
