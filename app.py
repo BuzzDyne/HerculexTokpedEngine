@@ -115,7 +115,8 @@ class App:
         self.db.TokpedLogActivity(PROCESS_NAME, "Process END")
 
     def syncTokpedNewOrderData(self):
-        currUnixTS = int(dt.now(tz.utc).timestamp())
+        SEVEN_HOURS_IN_SEC = 7 * 60 * 60
+        currUnixTS = int(dt.now(tz.utc).timestamp()) + SEVEN_HOURS_IN_SEC
         PROCESS_NAME = "Sync New Orders"
 
         # Logging
@@ -130,7 +131,8 @@ class App:
         )
         end_period = currUnixTS
         self.db.TokpedLogActivity(
-            PROCESS_NAME, f"StartPeriod : {start_period} | EndPeriod : {end_period}"
+            PROCESS_NAME,
+            f"StartPeriod : {start_period} | EndPeriod : {end_period} (GMT+7 Time)",
         )
 
         if start_period > end_period:
